@@ -15,14 +15,7 @@ public sealed class Day04 : BaseDay
         { Direction.West,      new Point(-1,  0) },
         { Direction.NorthWest, new Point(-1, -1) }
     };
-
-    private static Dictionary<Direction, Point> DiagonalDirections { get; } = new()
-    {
-        { Direction.NorthEast, new Point( 1, -1) },
-        { Direction.SouthEast, new Point( 1,  1) },
-        { Direction.SouthWest, new Point(-1,  1) },
-        { Direction.NorthWest, new Point(-1, -1) }
-    };
+    
     public char[][] WordSearch { get; set; }
 
     public Day04()
