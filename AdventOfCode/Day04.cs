@@ -59,7 +59,7 @@ public sealed class Day04 : BaseDay
     }
 
 
-    public bool CheckXmas(Point point, Direction direction)
+    private bool CheckXmas(Point point, Direction direction)
     {
         List<Point> points =
         [
@@ -75,7 +75,7 @@ public sealed class Day04 : BaseDay
         return chars == "XMAS";
     }
 
-    public bool CheckMas(Point point)
+    private bool CheckMas(Point point)
     {
         List<Point> points =
         [
@@ -119,7 +119,7 @@ public sealed class Day04 : BaseDay
     {
         return WordSearch[point.Y][point.X];
     }
-    public enum Direction
+    private enum Direction
     {
         North,
         NorthEast,
@@ -131,7 +131,7 @@ public sealed class Day04 : BaseDay
         NorthWest
     }
 
-    public record Point(int X, int Y)
+    private record Point(int X, int Y)
     {
         public static Point operator *(Point point, int amount)
         {
