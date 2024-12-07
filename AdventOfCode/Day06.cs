@@ -1,24 +1,23 @@
+using System.Security.AccessControl;
+
 namespace AdventOfCode;
 
 public sealed class Day06 : BaseDay
 {
-    private char[][] Map { get; set; }
-
-    private Point Position { get; set; }
-    private Direction Facing { get; set; } = Direction.North;
-    private List<Point> OccupiedSpots { get; set; } = [];
+    public char[][] Map { get; }
+    public Point StartingPosition { get; }
 
     public Day06()
     {
-        ResetState();
+        Map = File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray();
+        StartingPosition = FindStartingPosition();
     }
 
-    public void ResetState()
+    private char GetCharAt(Point point)
     {
-        Map = File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray();
-        FindStartingPosition();
-        OccupiedSpots = [];
+        return Map[point.Y][point.X];
     }
+    
     private Point FindStartingPosition()
     {
         for (var y = 0; y < Map.Length; y++)
@@ -28,7 +27,6 @@ public sealed class Day06 : BaseDay
                 var point = new Point(x, y);
                 var symbol = GetCharAt(point);
                 if (symbol != '^') continue;
-                MoveTo(point);
                 Map[y][x] = '.';
                 return point;
             }
@@ -37,162 +35,86 @@ public sealed class Day06 : BaseDay
         throw new Exception("no starting point");
     }
 
-    private void MoveTo(Point point)
-    {
-        if (!OccupiedSpots.Contains(point))
-            OccupiedSpots.Add(point);
-        Position = point;
-    }
-    
     private bool IsOnMap(Point point)
     {
         return point.X >= 0 && point.Y >= 0 && point.Y < Map.Length && point.X < Map[point.Y].Length;
     }
 
-    private Point GetPointInFront()
+    private List<Point>? GetStepsToEnd(Point? extraObstacle = null)
     {
-        return Position + Directions[Facing];
-    }
-    
-    public void MoveForward()
-    {
-        MoveTo(GetPointInFront());
-    }
-    
-    private char GetCharAt(Point point)
-    {
-        return Map[point.Y][point.X];
-    }
-    
-    public override ValueTask<string> Solve_1()
-    {
+        var position = StartingPosition;
+        var facing = FourDirection.North;
+        var occupiedSpots = new List<Point>();
+        var occupiedSpotsWithFacing = new List<(Point, FourDirection)>();
+        
         while (true)
         {
-            var point = GetPointInFront();
-            if (!IsOnMap(point))
+            if (!occupiedSpots.Contains(position))
+                occupiedSpots.Add(position);
+            
+            var facingTuple = (position, facing);
+            if (!occupiedSpotsWithFacing.Contains(facingTuple))
             {
-                break;
+                occupiedSpotsWithFacing.Add(facingTuple);
             }
-            var front = GetCharAt(point);
+            else
+            {
+                return null;
+            }
+
+            var facingPoint = position.GetPointInDirection(facing);
+            if (!IsOnMap(facingPoint))
+                break;
+            
+            if (facingPoint == extraObstacle)
+            {
+                facing = facing.RotateCW();
+                continue;
+            }
+            
+            var front = GetCharAt(facingPoint);
             switch (front)
             {
                 case '.':
-                    MoveForward();
+                    position = facingPoint;
                     break;
                 case '#':
-                    Facing = NextDirection(Facing);
+                    facing = facing.RotateCW();
                     break;
                 default:
                     throw new InvalidOperationException("what the fuck is a " + front);
             }
         }
-        return new ValueTask<string>(OccupiedSpots.Count.ToString());
+
+        return occupiedSpots;
+    }
+    
+    public override ValueTask<string> Solve_1()
+    {
+        var occupiedSpots = GetStepsToEnd();
+        return new ValueTask<string>(occupiedSpots?.Count.ToString());
     }
 
     public override ValueTask<string> Solve_2()
     {
-        // this is terrible but it's 12:30 am and i'm lazy
-        ResetState();
-        var startingPosition = Position;
-        var loopLocations = new List<Point>();
-        for (var y = 0; y < Map.Length; y++)
+        var occupiedSpots = GetStepsToEnd();
+        var loops = 0;
+        
+        if (occupiedSpots == null)
         {
-            for (var x = 0; x < Map[y].Length; x++)
+            return new ValueTask<string>("what the fuck");
+        }
+        
+        Parallel.ForEach(occupiedSpots, point =>
+        {
+            Console.WriteLine($"{loops} - {point}");
+            var occupiedSpotsWithLoops = GetStepsToEnd(point);
+            if (occupiedSpotsWithLoops == null)
             {
-                var obstaclePoint = new Point(x, y);
-                var originalChar = GetCharAt(obstaclePoint);
-                Map[y][x] = '#';
-                
-                Position = startingPosition;
-                List<(Point point, Direction direction)> occupiedSpotsWithDirection = [];
-
-                var looped = false;
-                while (true)
-                {
-                    var point = GetPointInFront();
-                    if (!IsOnMap(point))
-                        break;
-                    var front = GetCharAt(point);
-                    var duplicate = AddSpot(Position, Facing);
-                    if (duplicate)
-                    {
-                        looped = true;
-                        break;
-                    }
-                    
-                    switch (front)
-                    {
-                        case '.':
-                            MoveForward();
-                            break;
-                        case '#':
-                            Facing = NextDirection(Facing);
-                            break;
-                        default:
-                            throw new InvalidOperationException("what the fuck is a " + front);
-                    }
-                }
-
-                Map[y][x] = originalChar;
-                if (looped)
-                {
-                    loopLocations.Add(obstaclePoint);
-                }
-
-                continue;
-
-                bool AddSpot(Point point, Direction direction)
-                {
-                    if (occupiedSpotsWithDirection.Contains((point, direction))) return true;
-                    occupiedSpotsWithDirection.Add((point, direction));
-                    return false;
-                }
+                Interlocked.Increment(ref loops);
             }
-        }
-        return new ValueTask<string>(loopLocations.Count.ToString());
-    }
+        });
 
-    
-    // TODO - refactor this out to a shared record
-    private record Point(int X, int Y)
-    {
-        public static Point operator *(Point point, int amount)
-        {
-            return new Point(point.X * amount, point.Y * amount);
-        }
-
-        public static Point operator +(Point point1, Point point2)
-        {
-            return new Point(point1.X + point2.X, point1.Y + point2.Y);
-        }
-    }
-    
-    
-    private static Dictionary<Direction, Point> Directions { get; } = new()
-    {
-        { Direction.North,     new Point( 0, -1) },
-        { Direction.East,      new Point( 1,  0) },
-        { Direction.South,     new Point( 0,  1) },
-        { Direction.West,      new Point(-1,  0) },
-    };
-    
-    private enum Direction
-    {
-        North,
-        East,
-        South,
-        West
-    }
-    
-    private static Direction NextDirection(Direction direction)
-    {
-        return direction switch
-        {
-            Direction.North => Direction.East,
-            Direction.East => Direction.South,
-            Direction.South => Direction.West,
-            Direction.West => Direction.North,
-            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
-        };
+        return new ValueTask<string>(loops.ToString());
     }
 }

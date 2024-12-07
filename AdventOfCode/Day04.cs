@@ -1,19 +1,20 @@
 using System.Data;
+using AdventOfCode.Shared;
 
 namespace AdventOfCode;
 
 public sealed class Day04 : BaseDay
 {
-    private static Dictionary<Direction, Point> Directions { get; } = new()
+    private static Dictionary<EightDirection, Point> Directions { get; } = new()
     {
-        { Direction.North,     new Point( 0, -1) },
-        { Direction.NorthEast, new Point( 1, -1) },
-        { Direction.East,      new Point( 1,  0) },
-        { Direction.SouthEast, new Point( 1,  1) },
-        { Direction.South,     new Point( 0,  1) },
-        { Direction.SouthWest, new Point(-1,  1) },
-        { Direction.West,      new Point(-1,  0) },
-        { Direction.NorthWest, new Point(-1, -1) }
+        { EightDirection.North,     new Point( 0, -1) },
+        { EightDirection.NorthEast, new Point( 1, -1) },
+        { EightDirection.East,      new Point( 1,  0) },
+        { EightDirection.SouthEast, new Point( 1,  1) },
+        { EightDirection.South,     new Point( 0,  1) },
+        { EightDirection.SouthWest, new Point(-1,  1) },
+        { EightDirection.West,      new Point(-1,  0) },
+        { EightDirection.NorthWest, new Point(-1, -1) }
     };
     
     public char[][] WordSearch { get; set; }
@@ -59,7 +60,7 @@ public sealed class Day04 : BaseDay
     }
 
 
-    private bool CheckXmas(Point point, Direction direction)
+    private bool CheckXmas(Point point, EightDirection direction)
     {
         List<Point> points =
         [
@@ -79,11 +80,11 @@ public sealed class Day04 : BaseDay
     {
         List<Point> points =
         [
-            point + Directions[Direction.NorthWest],
-            point + Directions[Direction.NorthEast],
+            point + Directions[EightDirection.NorthWest],
+            point + Directions[EightDirection.NorthEast],
             point,
-            point + Directions[Direction.SouthEast],
-            point + Directions[Direction.SouthWest]
+            point + Directions[EightDirection.SouthEast],
+            point + Directions[EightDirection.SouthWest]
         ];
         
         if (points.Any(p => !PointInGrid(p)))
@@ -118,29 +119,5 @@ public sealed class Day04 : BaseDay
     private char CharAtPoint(Point point)
     {
         return WordSearch[point.Y][point.X];
-    }
-    private enum Direction
-    {
-        North,
-        NorthEast,
-        East,
-        SouthEast,
-        South,
-        SouthWest,
-        West,
-        NorthWest
-    }
-
-    private record Point(int X, int Y)
-    {
-        public static Point operator *(Point point, int amount)
-        {
-            return new Point(point.X * amount, point.Y * amount);
-        }
-
-        public static Point operator +(Point point1, Point point2)
-        {
-            return new Point(point1.X + point2.X, point1.Y + point2.Y);
-        }
     }
 }
