@@ -92,7 +92,6 @@ public sealed class Day06 : BaseDay
         
         Parallel.ForEach(occupiedSpots, point =>
         {
-            Console.WriteLine($"{loops} - {point}");
             var occupiedSpotsWithLoops = GetStepsToEnd(point);
             if (occupiedSpotsWithLoops == null)
             {
