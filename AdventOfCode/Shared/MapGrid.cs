@@ -17,7 +17,19 @@ public class MapGrid<T>
     {
         return Map[point.Y][point.X];
     }
-
+    
+    public T SetElementAt(Point point, T element)
+    {
+        Map[point.Y][point.X] = element;
+        return element;
+    }
+    
+    public T this[Point point]
+    {
+        get => GetElementAt(point);
+        set => SetElementAt(point, value);
+    }
+    
     public bool IsOnMap(Point point)
     {
         return point.X >= 0 && point.Y >= 0 && point.Y < Map.Length && point.X < Map[point.Y].Length;

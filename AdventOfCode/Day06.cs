@@ -4,40 +4,25 @@ namespace AdventOfCode;
 
 public sealed class Day06 : BaseDay
 {
-    public char[][] Map { get; }
+    public MapGrid<char> Map { get; }
     public Point StartingPosition { get; }
 
     public Day06()
     {
-        Map = File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray();
+        Map = new MapGrid<char>(File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray());
         StartingPosition = FindStartingPosition();
-    }
-
-    private char GetCharAt(Point point)
-    {
-        return Map[point.Y][point.X];
     }
     
     private Point FindStartingPosition()
     {
-        for (var y = 0; y < Map.Length; y++)
+        foreach (var (point, symbol) in Map.EachPoint())
         {
-            for (var x = 0; x < Map[y].Length; x++)
-            {
-                var point = new Point(x, y);
-                var symbol = GetCharAt(point);
-                if (symbol != '^') continue;
-                Map[y][x] = '.';
-                return point;
-            }
+            if (symbol != '^') continue;
+            Map[point] = '.';
+            return point;
         }
 
         throw new Exception("no starting point");
-    }
-
-    private bool IsOnMap(Point point)
-    {
-        return point.X >= 0 && point.Y >= 0 && point.Y < Map.Length && point.X < Map[point.Y].Length;
     }
 
     private List<Point>? GetStepsToEnd(Point? extraObstacle = null)
@@ -63,7 +48,7 @@ public sealed class Day06 : BaseDay
             }
 
             var facingPoint = position.GetPointInDirection(facing);
-            if (!IsOnMap(facingPoint))
+            if (!Map.IsOnMap(facingPoint))
                 break;
             
             if (facingPoint == extraObstacle)
@@ -72,7 +57,7 @@ public sealed class Day06 : BaseDay
                 continue;
             }
             
-            var front = GetCharAt(facingPoint);
+            var front = Map.GetElementAt(facingPoint);
             switch (front)
             {
                 case '.':

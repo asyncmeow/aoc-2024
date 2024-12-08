@@ -5,6 +5,8 @@ namespace AdventOfCode;
 
 public sealed class Day04 : BaseDay
 {
+    private MapGrid<char> WordSearch { get; }
+
     private static Dictionary<EightDirection, Point> Directions { get; } = new()
     {
         { EightDirection.North,     new Point( 0, -1) },
@@ -17,43 +19,34 @@ public sealed class Day04 : BaseDay
         { EightDirection.NorthWest, new Point(-1, -1) }
     };
     
-    public char[][] WordSearch { get; set; }
-
     public Day04()
     {
-        WordSearch = File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray();
+        WordSearch = new MapGrid<char>(File.ReadAllLines(InputFilePath).Select(l => l.ToArray()).ToArray());
     }
     
     public override ValueTask<string> Solve_1()
     {
         var totalXmas = 0;
-        for (var y = 0; y < WordSearch.Length; y++)
+        foreach (var (point, _) in WordSearch.EachPoint())
         {
-            for (var x = 0; x < WordSearch[y].Length; x++)
+            foreach (var direction in Directions.Keys)
             {
-                var point = new Point(x, y);
-                foreach (var direction in Directions.Keys)
-                {
-                    var hasXmas = CheckXmas(point, direction);
-                    if (hasXmas) totalXmas += 1;
-                }
+                var hasXmas = CheckXmas(point, direction);
+                if (hasXmas) totalXmas += 1;
             }
         }
-
+        
         return new ValueTask<string>(totalXmas.ToString());
     }
 
     public override ValueTask<string> Solve_2()
     {
         var totalMas = 0;
-        for (var y = 0; y < WordSearch.Length; y++)
+        
+        foreach (var (point, _) in WordSearch.EachPoint())
         {
-            for (var x = 0; x < WordSearch[y].Length; x++)
-            {
-                var point = new Point(x, y);
-                var hasMas = CheckMas(point);
-                if (hasMas) totalMas += 1;
-            }
+            var hasMas = CheckMas(point);
+            if (hasMas) totalMas += 1;
         }
 
         return new ValueTask<string>(totalMas.ToString());
@@ -69,10 +62,10 @@ public sealed class Day04 : BaseDay
             point + Directions[direction] * 2,
             point + Directions[direction] * 3,
         ];
-        if (points.Any(p => !PointInGrid(p)))
+        if (points.Any(p => !WordSearch.IsOnMap(p)))
             return false;
 
-        var chars = new string(points.Select(CharAtPoint).ToArray());
+        var chars = new string(points.Select(WordSearch.GetElementAt).ToArray());
         return chars == "XMAS";
     }
 
@@ -87,9 +80,9 @@ public sealed class Day04 : BaseDay
             point + Directions[EightDirection.SouthWest]
         ];
         
-        if (points.Any(p => !PointInGrid(p)))
+        if (points.Any(p => !WordSearch.IsOnMap(p)))
             return false;
-        var chars = new string(points.Select(CharAtPoint).ToArray());
+        var chars = new string(points.Select(WordSearch.GetElementAt).ToArray());
         
         // for debugging
         if (chars.Contains('.')) 
@@ -107,17 +100,5 @@ public sealed class Day04 : BaseDay
         };
         
         return validStrings.Contains(chars);
-    }
-    private bool PointInGrid(Point point)
-    {
-        return point.X >= 0
-               && point.Y >= 0
-               && point.Y < WordSearch.Length
-               && point.X < WordSearch[point.Y].Length;
-    }
-
-    private char CharAtPoint(Point point)
-    {
-        return WordSearch[point.Y][point.X];
     }
 }
